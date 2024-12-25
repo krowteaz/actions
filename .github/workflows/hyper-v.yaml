@@ -11,7 +11,10 @@ jobs:
     runs-on: self-hosted #name of self-hosted runner
 
     steps:
-
+    
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
       - name: Modify sudoers for sgadmin
         run: |
           echo "sgadmin ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/sgadmin
