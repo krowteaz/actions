@@ -23,11 +23,23 @@ jobs:
           node-version: 'lts/*'
           check-latest: true
 
-      # Step 3: Install dependencies
+      - name: Checkout repository
+        uses: actions/checkout@v2
+    
+      - name: Check if eliza-starter exists
+        run: |
+          if [ -d "./eliza-starter" ]; then
+            echo "Directory exists!"
+          else
+            echo "Directory does not exist."
+            exit 1
+          fi
+
       - name: Install dependencies
         run: |
+          cd eliza-starter
           npm install
-        working-directory: ./home/sgadmin/eliza-starter # Adjust if needed
+
 
       # Step 4: Verify installation
       - name: Verify installation
