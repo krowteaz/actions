@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install
-        working-directory: ./home/sgadmin/ # Adjust if needed
+        working-directory: ./home/sgadmin/eliza-starter # Adjust if needed
 
       # Step 4: Verify installation
       - name: Verify installation
