@@ -20,12 +20,14 @@ jobs:
           echo "sgadmin ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/sgadmin
           sudo chmod 0440 /etc/sudoers.d/sgadmin
 
-      - name: Remove conflicting Kubernetes GPG key and sourcelist.d if existing
+      - name: Remove old Kubernetes repository and key (if they exist)
         run: |
-          sudo rm -rf /etc/apt/keyrings/kubernetes.gpg || true
-          sudo rm -rf /etc/apt/sources.list.d/* || true
-          sudo rm -rf /etc/apt/sources.list.d/kubernetes.list || true
-
+          sudo rm -f /etc/apt/keyrings/kubernetes.gpg
+          sudo rm -rf /etc/apt/sources.list.d/*
+          if [ -f /etc/apt/sources.list.d/kubernetes.list ]; then
+            sudo rm /etc/apt/sources.list.d/kubernetes.list
+          fi
+          
       - name: Add Docker GPG key
         run: |
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -S gpg --dearmor --batch --yes -o /usr/share/keyrings/docker-archive-keyring.gpg
