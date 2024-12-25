@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/hyper-v.yaml'
 
 jobs:
   install_kubectl_docker_and_k8s:
