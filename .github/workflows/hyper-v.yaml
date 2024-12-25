@@ -73,7 +73,10 @@ jobs:
           echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
           sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
           sudo apt-get update
-          sudo apt-get install -y kubectl
+          sudo apt-get install -y kubelet kubeadm kubectl
+          sudo apt-mark hold kubelet kubeadm kubectl
+          sudo systemctl enable kubelet
+          sudo systemctl start kubelet
 
       - name: Verify kubectl installation
         run: kubectl version --client --output=yaml
@@ -81,7 +84,6 @@ jobs:
       - name: Initialize Kubernetes master node
         run: |
           kubeadm init
-          echo 'export KUBECONFIG=$HOME/admin.conf' >> $HOME/.bashrc
           export KUBECONFIG=$HOME/admin.conf
           kubectl get nodes
 
