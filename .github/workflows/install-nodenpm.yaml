@@ -1,0 +1,35 @@
+name: Install Node.js and npm
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup-node:
+    runs-on: self-hosted
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Install the latest Node.js and npm
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Use 'lts/*' for the latest LTS version or '16.x' for a specific version
+          check-latest: true    # Ensures the latest version is installed
+
+      # Step 3: Verify Node.js and npm versions
+      - name: Verify installation
+        run: |
+          node --version
+          npm --version
+
+      # Step 4: Install dependencies (optional)
+      - name: Install dependencies
+        run: npm install
