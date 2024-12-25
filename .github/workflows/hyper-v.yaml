@@ -72,23 +72,6 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
 
-      - name: Install Kubernetes Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y kubelet kubeadm kubectl
-          sudo apt-mark hold kubelet kubeadm kubectl
-
-      - name: Enable and Start Kubelet
-        run: |
-          sudo systemctl enable kubelet
-          sudo systemctl start kubelet
-
-      - name: Verify Kubernetes Tools
-        run: |
-          kubectl version --client
-          kubeadm version
-          kubelet --version
-
       - name: Add Kubernetes Repository and Keyring
         run: |
           sudo mkdir -p /etc/apt/keyrings
@@ -98,6 +81,24 @@ jobs:
           echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | \
           sudo tee /etc/apt/sources.list.d/kubernetes.list
           sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+
+      - name: Install Kubernetes Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubelet kubeadm kubectl
+          sudo apt-mark hold kubelet kubeadm kubectl
+
+      - name: Enable and Start Kubelet
+        run: |
+          sudo systemctl enable kubelet
+          sudo systemctl restart kubelet
+          sudo systemctl status kubelet
+
+      - name: Verify Kubernetes Tools
+        run: |
+          kubectl version --client
+          kubeadm version
+          kubelet --version
           
       - name: Initialize Kubernetes master node
         run: |
