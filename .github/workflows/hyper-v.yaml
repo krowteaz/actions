@@ -52,20 +52,6 @@ jobs:
           sudo -S systemctl start docker
           docker --version
 
-      - name: Update apt package list
-        run: sudo apt-get update
-
-      - name: Install Kubelet, kubectl and kubeadm v1.32 (Ubuntu 24)
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
-          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-          kubectl version --client
-
-      - name: Verify kubectl installation
-        run: kubectl version --client --output=yaml
-
       - name: Install and configure containerd
         run: |
           sudo -S mkdir -p /etc/containerd
@@ -74,6 +60,23 @@ jobs:
           sudo -S sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
           sudo -S systemctl daemon-reload
           sudo -S systemctl restart containerd
+
+      - name: Update apt package list
+        run: sudo apt-get update
+
+      - name: Install Kubelet, kubectl and kubeadm v1.32 (Ubuntu 24)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+          curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+          sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+          echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+          sudo apt-get update
+          sudo apt-get install -y kubectl
+
+      - name: Verify kubectl installation
+        run: kubectl version --client --output=yaml
 
       - name: Initialize Kubernetes master node
         run: |
