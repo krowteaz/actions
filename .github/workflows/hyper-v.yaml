@@ -7,7 +7,7 @@ on:
 
 jobs:
   install_kubectl_docker_and_k8s:
-    runs-on: ubuntu-vm #name of self-hosted runner
+    runs-on: self-hosted #name of self-hosted runner
 
     steps:
 
