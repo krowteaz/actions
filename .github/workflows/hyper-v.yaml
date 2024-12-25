@@ -66,24 +66,38 @@ jobs:
           sudo -S systemctl daemon-reload
           sudo -S systemctl restart containerd
 
-      - name: Install Kubelet, kubectl and kubeadm v1.32 (Ubuntu 24)
+      - name: Update System and Install Prerequisites
         run: |
-          sudo apt autoremove -y
           sudo apt-get update
+          sudo apt-get autoremove -y
           sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
-          curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+      - name: Add Kubernetes Repository and Keyring
+        run: |
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | \
+          sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
           sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-          echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | \
+          sudo tee /etc/apt/sources.list.d/kubernetes.list
           sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+
+      - name: Install Kubernetes Tools
+        run: |
           sudo apt-get update
           sudo apt-get install -y kubelet kubeadm kubectl
           sudo apt-mark hold kubelet kubeadm kubectl
+
+      - name: Enable and Start Kubelet
+        run: |
           sudo systemctl enable kubelet
           sudo systemctl start kubelet
 
-      - name: Verify kubectl installation
-        run: kubectl version --client --output=yaml
-
+      - name: Verify Kubernetes Tools
+        run: |
+          kubectl version --client
+          kubeadm version
+          kubelet --version
       - name: Initialize Kubernetes master node
         run: |
           kubeadm init
