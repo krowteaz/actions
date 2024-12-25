@@ -54,12 +54,13 @@ jobs:
       - name: Update apt package list
         run: sudo apt-get update
       
-      - name: Install Kubelet, kubectl and kubeadm via Snap (Ubuntu 24)
+      - name: Install Kubelet, kubectl and kubeadm v1.32 (Ubuntu 24)
         run: |
-          sudo snap install kubelet --classic
-          sudo snap install kubeadm --classic
-          sudo snap install kubectl --classic
-          sudo systemctl enable kubelet.service
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client
 
       - name: Verify kubectl installation
         run: kubectl version --client --output=yaml
