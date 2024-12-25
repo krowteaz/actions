@@ -7,7 +7,7 @@ on:
 
 jobs:
   install_kubectl_docker_and_k8s:
-    runs-on: ubuntu-vm #name of self-hosted runner
+    runs-on: self-hosteed #name of self-hosted runner
 
     steps:
 
@@ -21,11 +21,11 @@ jobs:
           sudo rm -rf /etc/apt/keyrings/kubernetes.gpg || true
           sudo rm -rf /etc/apt/sources.list.d/* || true
           sudo rm -rf /etc/apt/sources.list.d/kubernetes.list || true
-      
+
       - name: Add Docker GPG key
         run: |
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -S gpg --dearmor --batch --yes -o /usr/share/keyrings/docker-archive-keyring.gpg
-          
+
       - name: Set up Docker repository
         run: |
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo -S tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -33,16 +33,16 @@ jobs:
       - name: Re-add Kubernetes GPG key (if needed)
         run: |
           curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo -S tee /etc/apt/keyrings/kubernetes.gpg
- 
+
       - name: Install Docker dependencies
         run: |
           sudo -S apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-     
+
       - name: Download kubectl binary
         run: |
           K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
           curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
-          
+
       - name: Install Docker and verify version
         run: |
           sudo -S apt-get update
@@ -53,7 +53,7 @@ jobs:
 
       - name: Update apt package list
         run: sudo apt-get update
-      
+
       - name: Install Kubelet, kubectl and kubeadm v1.32 (Ubuntu 24)
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -73,15 +73,19 @@ jobs:
           sudo -S sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
           sudo -S systemctl daemon-reload
           sudo -S systemctl restart containerd
-          
+
       - name: Initialize Kubernetes master node
         run: |
-          sudo -S kubeadm init
-          sudo -S cp /etc/kubernetes/admin.conf $HOME/
-          sudo -S chown $(id -u):$(id -g) $HOME/admin.conf
+          kubeadm init
           echo 'export KUBECONFIG=$HOME/admin.conf' >> $HOME/.bashrc
           export KUBECONFIG=$HOME/admin.conf
           kubectl get nodes
+
+      - name: Manage Cluster as regular user
+        run: |
+          sudo cp /etc/kubernetes/admin.conf $HOME/
+          sudo chown $(id -u):$(id -g) $HOME/admin.conf
+          echo 'export KUBECONFIG=$HOME/admin.conf' >> $HOME/.bashrc
 
       - name: Download and Apply Calico
         run: |
@@ -92,7 +96,7 @@ jobs:
           else
             echo "Calico manifest download failed." && exit 1
           fi
-          
+
       - name: Untaint Control-Plane Nodes
         run: |
           export KUBECONFIG=$HOME/admin.conf
