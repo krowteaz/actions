@@ -28,7 +28,7 @@ jobs:
     
       - name: Check if eliza-starter exists
         run: |
-          if [ -d "./eliza-starter" ]; then
+          if [ -d "/home/sgadmin/eliza-starter" ]; then
             echo "Directory exists!"
           else
             echo "Directory does not exist."
