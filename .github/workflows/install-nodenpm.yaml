@@ -10,26 +10,28 @@ on:
 
 jobs:
   setup-node:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Check out the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Install the latest Node.js and npm
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*' # Use 'lts/*' for the latest LTS version or '16.x' for a specific version
-          check-latest: true    # Ensures the latest version is installed
+          node-version: 'lts/*'
+          check-latest: true
 
-      # Step 3: Verify Node.js and npm versions
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          npm install
+        working-directory: ./home/sgadmin/ # Adjust if needed
+
+      # Step 4: Verify installation
       - name: Verify installation
         run: |
-          node --version
           npm --version
-
-      # Step 4: Install dependencies (optional)
-      - name: Install dependencies
-        run: npm install
+          node --version
