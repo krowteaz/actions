@@ -98,9 +98,10 @@ jobs:
           kubectl version --client
           kubeadm version
           kubelet --version
+          
       - name: Initialize Kubernetes master node
         run: |
-          kubeadm init
+          sudo kubeadm init
           export KUBECONFIG=$HOME/admin.conf
           kubectl get nodes
 
