@@ -1,0 +1,103 @@
+name: Hyper-V (Install Docker, K8s and Initialize Kubernetes)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  install_kubectl_docker_and_k8s:
+    runs-on: ubuntu-vm #name of self-hosted runner
+
+    steps:
+
+      - name: Modify sudoers for sgadmin
+        run: |
+          echo "sgadmin ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/sgadmin
+          sudo chmod 0440 /etc/sudoers.d/sgadmin
+
+      - name: Remove conflicting Kubernetes GPG key and sourcelist.d if existing
+        run: |
+          sudo rm -rf /etc/apt/keyrings/kubernetes.gpg || true
+          sudo rm -rf /etc/apt/sources.list.d/* || true
+          sudo rm -rf /etc/apt/sources.list.d/kubernetes.list || true
+      
+      - name: Add Docker GPG key
+        run: |
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -S gpg --dearmor --batch --yes -o /usr/share/keyrings/docker-archive-keyring.gpg
+          
+      - name: Set up Docker repository
+        run: |
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo -S tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+      - name: Re-add Kubernetes GPG key (if needed)
+        run: |
+          curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo -S tee /etc/apt/keyrings/kubernetes.gpg
+ 
+      - name: Install Docker dependencies
+        run: |
+          sudo -S apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+     
+      - name: Download kubectl binary
+        run: |
+          K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+          curl -LO "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl"
+          
+      - name: Install Docker and verify version
+        run: |
+          sudo -S apt-get update
+          sudo -S apt-get install -y docker-ce docker-ce-cli containerd.io
+          sudo -S systemctl enable docker
+          sudo -S systemctl start docker
+          docker --version
+
+      - name: Update apt package list
+        run: sudo apt-get update
+      
+      - name: Install Kubelet, kubectl and kubeadm via Snap (Ubuntu 24)
+        run: |
+          sudo snap install kubelet --classic
+          sudo snap install kubeadm --classic
+          sudo snap install kubectl --classic
+          sudo systemctl enable kubelet.service
+
+      - name: Verify kubectl installation
+        run: kubectl version --client --output=yaml
+
+      - name: Install and configure containerd
+        run: |
+          sudo -S mkdir -p /etc/containerd
+          sudo -S apt install -y containerd
+          sudo -S containerd config default | sudo -S tee /etc/containerd/config.toml
+          sudo -S sed -i 's/            SystemdCgroup = false/            SystemdCgroup = true/' /etc/containerd/config.toml
+          sudo -S systemctl daemon-reload
+          sudo -S systemctl restart containerd
+          
+      - name: Initialize Kubernetes master node
+        run: |
+          sudo -S kubeadm init
+          sudo -S cp /etc/kubernetes/admin.conf $HOME/
+          sudo -S chown $(id -u):$(id -g) $HOME/admin.conf
+          echo 'export KUBECONFIG=$HOME/admin.conf' >> $HOME/.bashrc
+          export KUBECONFIG=$HOME/admin.conf
+          kubectl get nodes
+
+      - name: Download and Apply Calico
+        run: |
+          export KUBECONFIG=$HOME/admin.conf
+          curl -LO https://docs.tigera.io/archive/v3.25/manifests/calico.yaml
+          if [ -s calico.yaml ]; then
+            kubectl apply -f calico.yaml --validate=false
+          else
+            echo "Calico manifest download failed." && exit 1
+          fi
+          
+      - name: Untaint Control-Plane Nodes
+        run: |
+          export KUBECONFIG=$HOME/admin.conf
+          kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+          kubectl taint nodes --all key:NoSchedule
+
+      - name: Install Telnet
+        run: |
+          sudo -S apt-get install -y telnet
